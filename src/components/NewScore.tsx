@@ -1,26 +1,19 @@
 import { Button } from "react-bootstrap";
-import { useData } from "../providers/DataProvider";
-import { useScore } from "../providers/ScoreProvider";
 import Chrono from "./Chrono";
+import { useGame } from "../providers/GameProvider";
 
 const NewScore = () => {
-    const { newScore, setNewScore } = useScore();
-    const { selectTopic } = useData();
-
-    const backToMenu = () => {
-        selectTopic(null!);
-        setNewScore(null);
-    };
+    const { currentGame, backToMenu } = useGame();
 
     return (
         <>
-            {newScore && (
+            {currentGame?.score && (
                 <>
-                    <Chrono durationInMs={newScore.durationInMs} />
+                    <Chrono durationInMs={currentGame.score.durationInMs} />
                     <div className="d-flex">
-                        <span>{newScore.totalCount} mots</span>
+                        <span>{currentGame.score.totalCount} mots</span>
                         <span className="mx-2">-</span>
-                        <span>{newScore.errorsCount} erreur(s)</span>
+                        <span>{currentGame.score.errorsCount} erreur(s)</span>
                     </div>
                 </>
             )}

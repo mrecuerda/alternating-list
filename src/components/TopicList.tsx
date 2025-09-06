@@ -1,23 +1,35 @@
 import { Button } from "react-bootstrap";
-import { useData } from "../providers/DataProvider";
+import { useGame } from "../providers/GameProvider";
+import { pickColors } from "../services/ColorService";
+import { zip } from "../services/ArrayService";
 
 const TopicData = () => {
-    const { topics, selectTopic } = useData();
+    const { availableTopics, startGame } = useGame();
+    const colors = pickColors(availableTopics.length);
+    const coloredTopics = zip(availableTopics, colors).map((x) => {
+        return {
+            topicTitle: x[0],
+            color: x[1],
+        };
+    });
 
     return (
-        topics && (
-            <>
-                {topics.map((topic, key) => (
+        <>
+            {coloredTopics.map((coloredTopic) => {
+                const { topicTitle, color } = coloredTopic;
+
+                return (
                     <Button
-                        key={key}
+                        key={topicTitle}
                         className="btn-lg my-2 col-12 col-md-6"
-                        onClick={() => selectTopic(topic)}
+                        onClick={() => startGame(topicTitle)}
+                        variant={color}
                     >
-                        {topic}
+                        {topicTitle}
                     </Button>
-                ))}
-            </>
-        )
+                );
+            })}
+        </>
     );
 };
 

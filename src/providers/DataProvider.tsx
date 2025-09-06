@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { forceShuffleFirstInPlace, shuffle } from "../utils/arrayExtensions";
+import { forceShuffleFirstInPlace, shuffle } from "../services/ArrayService";
 import topicsData from "../assets/data.json";
 
 export type Topic = keyof typeof topicsData;
@@ -37,7 +37,7 @@ const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Avoid having the same pair twice in a row when looping the topic
-        const shuffledPairs = shuffle(topicsData[currentTopic]) as Pair[];
+        const shuffledPairs = shuffle(topicsData[currentTopic].pairs) as Pair[];
         if (remainingPairs.length == 1) {
             const nextPair = remainingPairs[0];
             const nextShuffledPair = shuffledPairs[0];

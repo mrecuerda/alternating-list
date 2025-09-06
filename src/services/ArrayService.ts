@@ -2,30 +2,65 @@ export const intersect = <T>(array: T[], other: T[]): T[] => {
     return array.filter((x) => other.includes(x));
 };
 
-/**
- * Create a copy of `array`, shuffling positions of all items in the copy.
- */
+export const zip = <T, U>(array: T[], other: U[]): [T, U][] => {
+    return array.map((item, index) => {
+        return [item, other[index]];
+    });
+};
+
+export const takeRandom = <T>(
+    array: T[],
+    count: number,
+    avoidRepeat: number = 1 / 3
+): T[] => {
+    if (count == 0 || array == null || array.length == 0) {
+        return [];
+    }
+
+    if (count == 1) {
+        return [atRandom(array)];
+    }
+
+    const result = shuffle(array);
+    if (count <= result.length) {
+        return result.slice(0, count);
+    }
+
+    const shuffledBatch: T[] = [];
+    const excludeCount = Math.min(
+        Math.round(array.length * avoidRepeat),
+        array.length - 1
+    );
+    while (result.length < count) {
+        if (shuffledBatch.length == 0) {
+            shuffledBatch.push(...shuffle(array));
+        }
+
+        const exclude = result.slice(-excludeCount);
+        const possibleItems = shuffledBatch.filter((x) => !exclude.includes(x));
+        const next = atRandom(possibleItems);
+
+        const shuffledIndex = shuffledBatch.indexOf(next);
+        shuffledBatch.splice(shuffledIndex, 1);
+
+        result.push(next);
+    }
+
+    return result;
+};
+
 export const shuffle = <T>(array: T[]): T[] => {
     const copy = [...array];
     shuffleInPlace(copy);
     return copy;
 };
 
-/**
- * Shuffle positions of all items in `array`.
- */
 export const shuffleInPlace = <T>(array: T[]): void => {
     for (let i = array.length - 1; i > 0; i--) {
         shuffleAtIndex(array, i);
     }
 };
 
-/**
- * Most-likely switch item at index `i` with a previous item of `array`.
- *
- * @remarks
- * Has a 1/`i` chance not to switch places.
- */
 export const shuffleAtIndex = <T>(array: T[], i: number): void => {
     if (array.length <= i) {
         return;
@@ -35,9 +70,6 @@ export const shuffleAtIndex = <T>(array: T[], i: number): void => {
     [array[i], array[j]] = [array[j], array[i]];
 };
 
-/**
- * Switch place of last item with another item randomly
- */
 export const forceShuffleFirstInPlace = <T>(array: T[]): void => {
     if (array.length < 2) {
         return;
@@ -48,9 +80,6 @@ export const forceShuffleFirstInPlace = <T>(array: T[]): void => {
     [array[i], array[j]] = [array[j], array[i]];
 };
 
-/**
- * Switch place of last item with another item randomly
- */
 export const forceShuffleLastInPlace = <T>(array: T[]): void => {
     if (array.length < 2) {
         return;
@@ -65,9 +94,6 @@ export const atRandom = <T>(array: T[]): T => {
     return array[random(array.length)];
 };
 
-/**
- * @returns Random value from 0 (included) to `max` (excluded)
- */
 const random = (max: number): number => {
     return Math.floor(Math.random() * max);
 };
