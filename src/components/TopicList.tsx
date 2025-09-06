@@ -1,14 +1,24 @@
-import { Button } from 'react-bootstrap';
-import { useList } from "../providers/ListProvider";
+import { Button } from "react-bootstrap";
+import { useData } from "../providers/DataProvider";
 
-const TopicList = () => {
-    const { topics, selectTopic } = useList();
+const TopicData = () => {
+    const { topics, selectTopic } = useData();
 
-    return topics && (<div className="d-flex flex-column">
-        {topics.map((topic, key) => (
-            <Button key={key} onClick={() => selectTopic(topic)}>{topic}</Button>
-        ))}
-    </div>);
+    return (
+        topics && (
+            <>
+                {topics.map((topic, key) => (
+                    <Button
+                        key={key}
+                        className="btn-lg my-2 col-12 col-md-6"
+                        onClick={() => selectTopic(topic)}
+                    >
+                        {topic}
+                    </Button>
+                ))}
+            </>
+        )
+    );
 };
 
-export default TopicList;
+export default TopicData;
