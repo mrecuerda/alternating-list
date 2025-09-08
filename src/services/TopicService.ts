@@ -1,10 +1,11 @@
 import jsonData from "../assets/data.json";
+import type { Category } from "../types/Category";
 
 export type Data = Record<TopicTitle, Topic>;
 export type TopicTitle = keyof typeof jsonData;
 export type Topic = {
     id: string;
-    categories: [string, string];
+    categories: [Category, Category];
     pairs: RawPair[];
 };
 export type RawPair = {

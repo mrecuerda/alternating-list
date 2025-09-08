@@ -3,7 +3,7 @@ import Chrono from "./Chrono";
 import { useGame } from "../providers/GameProvider";
 
 const NewScore = () => {
-    const { currentGame, backToMenu } = useGame();
+    const { game: currentGame, backToMenu } = useGame();
 
     return (
         <>

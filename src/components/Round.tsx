@@ -1,93 +1,73 @@
 import { Button } from "react-bootstrap";
-import { useGame, type Choice } from "../providers/GameProvider";
+import { useGame } from "../providers/GameProvider";
 import { useEffect, useMemo, useState } from "react";
+import type { Answer } from "../types/Choice";
 
 const Round = () => {
-    const { currentGame } = useGame();
+    const { game } = useGame();
     const [failed, setFailed] = useState(false);
 
-    const click = (choice: Choice) => {
-        if (!currentGame) {
+    const click = (word: Answer) => {
+        if (!game) {
             return;
         }
 
-        currentGame.pick(choice);
+        game.pick(word);
     };
 
     const currentPair = useMemo(() => {
-        if (!currentGame) {
-            return [null, null, null];
+        if (!game) {
+            return null;
         }
 
-        if (currentGame.roundsPlayed == currentGame.rounds.length) {
-            return [null, null, null];
+        if (game.rounds == game.questions.length) {
+            return null;
         }
 
-        const currentPair = currentGame.rounds[currentGame.roundsPlayed];
+        const currentPair = game.questions[game.rounds];
         return currentPair;
-    }, [currentGame]);
-
-    const [firstChoice, secondChoice] = useMemo(() => {
-        if (!currentPair) {
-            return [null, null];
-        }
-
-        const shift = Math.random() >= 0.5;
-        return [
-            shift ? currentPair[1] : currentPair[0],
-            shift ? currentPair[0] : currentPair[1],
-        ];
-    }, [currentPair]);
-
-    const isWrong = (choice: Choice) => {
-        if (!failed || !currentGame || currentGame.expectedCategory == null) {
-            return false;
-        }
-
-        return choice.id == currentGame.wrongChoiceId;
-    };
+    }, [game]);
 
     useEffect(() => {
-        if (!currentGame) {
+        if (!game || !game.questions[game.rounds].error) {
+            setFailed(false);
             return;
         }
 
-        if (currentGame.wrongChoiceId) {
-            setFailed(true);
-            const timeoutId = setTimeout(() => {
-                setFailed(false);
-            }, 500);
+        setFailed(true);
+        const timeoutId = setTimeout(() => {
+            setFailed(false);
+        }, 500);
 
-            return () => {
-                clearTimeout(timeoutId);
-            };
-        }
-    }, [currentGame]);
+        return () => {
+            clearTimeout(timeoutId);
+        };
+    }, [game]);
 
-    console.log(currentGame?.rounds);
+    console.log(game?.questions);
 
     return (
         currentPair && (
             <>
                 <Button
-                    key={firstChoice!.id}
+                    key={currentPair[0].id}
                     className={`btn-lg col-md-4 col-sm-8 col-12 my-3 py-5 py-md-4 ${
-                        isWrong(firstChoice!) ? "shake" : null
+                        !currentPair[0].isValid && failed ? "shake" : null
                     }`}
-                    onClick={() => click(firstChoice!)}
-                    variant={firstChoice!.color}
+                    onClick={() => click(currentPair[0])}
+                    variant={currentPair[0].color}
                 >
-                    {firstChoice!.word}
+                    {currentPair[0].value}
                 </Button>
                 <Button
-                    key={secondChoice!.id}
+                    key={currentPair[1].id}
                     className={`btn-lg col-md-4 col-sm-8 col-12 my-3 py-5 py-md-4 ${
-                        isWrong(secondChoice!) ? "shake" : null
+                        !currentPair[1].isValid && failed ? "shake" : null
                     }`}
-                    onClick={() => click(secondChoice!)}
-                    variant={secondChoice!.color}
+                    onClick={() => click(currentPair[1])}
+                    variant={currentPair[1].color}
                 >
-                    {secondChoice!.word}
+                    {currentPair[1].value}
                 </Button>
             </>
         )

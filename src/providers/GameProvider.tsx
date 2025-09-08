@@ -5,9 +5,13 @@ import {
     type RawPair,
     type TopicTitle,
 } from "../services/TopicService";
-import { pickColors, type Color } from "../services/ColorService";
-import { useScore, type Score } from "./ScoreProvider";
+import { pickColors } from "../services/ColorService";
 import { takeRandom } from "../services/ArrayService";
+
+import type { Game } from "../types/Game";
+import type { Answer } from "../types/Choice";
+import type { Question } from "../types/Pair";
+import type { Category } from "../types/Category";
 
 const GAME_ROUNDS_COUNT = 50;
 
@@ -15,82 +19,52 @@ interface IGameContext {
     gameState: GameState;
     availableTopics: TopicTitle[];
     startGame: (topicTitle: TopicTitle) => void;
-    currentGame: Game | null;
+    game: Game | null;
     backToMenu: () => void;
 }
 export type GameState = "menu" | "playing" | "score";
-export type Game = {
-    topicTitle: TopicTitle;
-    startDate: Date | null;
-    rounds: Pair[];
-    roundsPlayed: number;
-    expectedCategory: Category | null;
-    errors: number;
-    wrongChoiceId: string | null;
-    pick: (choice: Choice) => void;
-    score: Score | null;
-};
-export type Pair = {
-    id: string;
-    0: Choice;
-    1: Choice;
-};
-export type Choice = {
-    id: string;
-    word: string;
-    category: Category;
-    color: Color;
-};
-export type Category = 0 | 1;
 
 const GameContext = createContext<IGameContext>(null!);
 
 const GameProvider = ({ children }: { children: React.ReactNode }) => {
     const [gameState, setGameState] = useState<GameState>("menu");
     const [currentGame, setCurrentGame] = useState<Game | null>(null);
-    const { addScore } = useScore();
 
-    const pick = useCallback(
-        (choice: Choice) => {
-            setCurrentGame((previousGame) => {
-                if (!previousGame) {
-                    return previousGame;
-                }
+    const pick = useCallback((choice: Answer) => {
+        setCurrentGame((previousGame) => {
+            if (!previousGame) {
+                return previousGame;
+            }
 
-                const game = cloneGame(previousGame);
+            const game = cloneGame(previousGame);
 
-                if (game.roundsPlayed == 0) {
-                    game.startDate = new Date();
-                } else if (choice.category != game.expectedCategory) {
-                    game.errors++;
-                    game.wrongChoiceId = choice.id;
-                    return game;
-                }
-
-                game.wrongChoiceId = null;
-                game.roundsPlayed++;
-                if (game.roundsPlayed == GAME_ROUNDS_COUNT) {
-                    game.score = addScore(
-                        game.startDate!,
-                        new Date(),
-                        game.roundsPlayed,
-                        game.errors
-                    );
-
-                    setGameState("score");
-                    return game;
-                }
-
-                const nextCategory = (1 - choice.category) as Category;
-                game.expectedCategory = nextCategory;
+            if (game.rounds == 0) {
+                updateAnswersValidity(game.questions, choice.category);
+                game.startDate = new Date();
+            } else if (!choice.isValid) {
+                game.questions[game.rounds].error = true;
+                game.errors++;
                 return game;
-            });
-        },
-        [addScore]
-    );
+            }
+
+            game.rounds++;
+            if (game.rounds == GAME_ROUNDS_COUNT) {
+                // game.score = await ScoreRepository.insert(
+                //     game.startDate!,
+                //     new Date(),
+                //     game.rounds,
+                //     game.errors
+                // );
+
+                setGameState("score");
+                return game;
+            }
+
+            return game;
+        });
+    }, []);
 
     const startGame = (topicTitle: TopicTitle) => {
-        debugger;
         const newGame = createNewGame(topicTitle, pick);
         setCurrentGame(newGame);
         setGameState("playing");
@@ -105,7 +79,7 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
         gameState,
         availableTopics: getTopics(),
         startGame,
-        currentGame,
+        game: currentGame,
         backToMenu,
     };
 
@@ -116,20 +90,19 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
 
 const createNewGame = (
     topicTitle: TopicTitle,
-    pick: (choice: Choice) => void
+    pick: (choice: Answer) => void
 ): Game => {
     const topic = getTopicBy(topicTitle);
-    const topicPairs = fromRawPairs(topic.pairs);
-    const rounds = takeRandom(topicPairs, GAME_ROUNDS_COUNT);
+    const rounds = takeRandom(topic.pairs, GAME_ROUNDS_COUNT);
+    const questions = buildQuestions(rounds, topic.categories);
 
     return {
-        topicTitle,
+        topic,
+        categories: topic.categories,
         startDate: null,
-        rounds,
-        roundsPlayed: 0,
-        expectedCategory: null,
+        questions: questions,
+        rounds: 0,
         errors: 0,
-        wrongChoiceId: null,
         pick,
         score: null,
     };
@@ -137,32 +110,56 @@ const createNewGame = (
 
 const cloneGame = (game: Game): Game => {
     const clone = { ...game };
-    clone.rounds = [...game.rounds];
+    clone.questions = [...game.questions];
 
     return clone;
 };
 
-const fromRawPair = (rawPair: RawPair): Pair => {
+const buildQuestions = (
+    pairs: RawPair[],
+    categories: [Category, Category]
+): Question[] => {
+    return pairs.map((x) => buildQuestion(categories, x));
+};
+
+const buildQuestion = (
+    categories: [Category, Category],
+    rawPair: RawPair
+): Question => {
     const colors = pickColors(2);
+    const reverse = Math.random() >= 0.5;
+    const [first, second]: [0 | 1, 0 | 1] = reverse ? [1, 0] : [0, 1];
     return {
         id: rawPair.id,
         0: {
             id: crypto.randomUUID(),
-            word: rawPair[0],
-            category: 0,
-            color: colors[0],
+            value: rawPair[first],
+            category: categories[first],
+            isValid: true,
+            color: colors[first],
         },
         1: {
             id: crypto.randomUUID(),
-            word: rawPair[1],
-            category: 1,
-            color: colors[1],
+            value: rawPair[second],
+            category: categories[second],
+            isValid: true,
+            color: colors[second],
         },
+        error: false,
     };
 };
 
-const fromRawPairs = (rawPairs: RawPair[]): Pair[] => {
-    return rawPairs.map(fromRawPair);
+const updateAnswersValidity = (
+    questions: Question[],
+    firstCategory: Category
+) => {
+    const categories = [questions[0][0].category, questions[0][1].category];
+    const otherCategory = categories.find((x) => x != firstCategory);
+    questions.forEach((question, index) => {
+        const expectedCategory = index % 2 == 0 ? firstCategory : otherCategory;
+        question[0].isValid = question[0].category == expectedCategory;
+        question[1].isValid = question[1].category == expectedCategory;
+    });
 };
 
 const useGame = () => {
