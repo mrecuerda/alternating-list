@@ -1,19 +1,27 @@
 import { Button } from "react-bootstrap";
 import Chrono from "./Chrono";
 import { useGame } from "../providers/GameProvider";
+import { useMemo } from "react";
 
 const NewScore = () => {
-    const { game: currentGame, backToMenu } = useGame();
+    const { game, backToMenu } = useGame();
+
+    const score = useMemo(() => {
+        return game.currentSession?.score;
+    }, [game]);
 
     return (
         <>
-            {currentGame?.score && (
+            {score && (
                 <>
-                    <Chrono durationInMs={currentGame.score.durationInMs} />
+                    <h1 className="text-success">
+                        {game.currentSession?.topic.title}
+                    </h1>
+                    <Chrono durationInMs={score.durationInMs} />
                     <div className="d-flex">
-                        <span>{currentGame.score.totalCount} mots</span>
+                        <span>{score.rounds} mots</span>
                         <span className="mx-2">-</span>
-                        <span>{currentGame.score.errorsCount} erreur(s)</span>
+                        <span>{score.errors} erreur(s)</span>
                     </div>
                 </>
             )}

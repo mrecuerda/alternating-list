@@ -9,8 +9,10 @@ export class ScoreRepository {
         rounds: number,
         errors: number
     ): Promise<Score> => {
+        debugger;
+
         const score: Score = {
-            id: 0,
+            id: undefined!,
             topicTitle,
             date: startDate,
             durationInMs: endDate.getTime() - startDate.getTime(),
@@ -18,9 +20,14 @@ export class ScoreRepository {
             errors,
         };
 
-        const id = await db.scores.add(score);
-        score.id = id;
-        return score;
+        try {
+            const id = await db.scores.add(score);
+            score.id = id;
+            return score;
+        } catch (e) {
+            console.log(e);
+            throw e;
+        }
     };
 
     static readonly get = (id: number): Promise<Score | undefined> => {

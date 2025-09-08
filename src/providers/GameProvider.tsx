@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import {
     getTopicBy,
     getTopics,
@@ -10,53 +16,61 @@ import { takeRandom } from "../services/ArrayService";
 
 import type { Game } from "../types/Game";
 import type { Answer } from "../types/Choice";
-import type { Question } from "../types/Pair";
+import type { Question } from "../types/Question";
 import type { Category } from "../types/Category";
+import { ScoreRepository } from "../dataAccessLayer/ScoreRepository";
+import type { GameSession } from "../types/GameSession";
 
 const GAME_ROUNDS_COUNT = 50;
 
 interface IGameContext {
-    gameState: GameState;
+    game: Game;
     availableTopics: TopicTitle[];
     startGame: (topicTitle: TopicTitle) => void;
-    game: Game | null;
+    pick: (choice: Answer) => void;
     backToMenu: () => void;
 }
-export type GameState = "menu" | "playing" | "score";
 
 const GameContext = createContext<IGameContext>(null!);
 
 const GameProvider = ({ children }: { children: React.ReactNode }) => {
-    const [gameState, setGameState] = useState<GameState>("menu");
-    const [currentGame, setCurrentGame] = useState<Game | null>(null);
+    const [game, setGame] = useState<Game>({
+        state: "menu",
+        currentSession: null,
+    });
+
+    const startGame = (topicTitle: TopicTitle) => {
+        setGame((prev) => {
+            const game = cloneGame(prev);
+            game.state = "playing";
+            game.currentSession = createNewGameSession(topicTitle);
+
+            return game;
+        });
+    };
 
     const pick = useCallback((choice: Answer) => {
-        setCurrentGame((previousGame) => {
-            if (!previousGame) {
-                return previousGame;
+        setGame((prev) => {
+            if (!prev.currentSession) {
+                return prev;
             }
 
-            const game = cloneGame(previousGame);
+            const game = cloneGame(prev);
+            const gameSession = game.currentSession!;
 
-            if (game.rounds == 0) {
-                updateAnswersValidity(game.questions, choice.category);
-                game.startDate = new Date();
+            if (gameSession.round == 0) {
+                updateAnswersValidity(gameSession.questions, choice.category);
+                gameSession.startDate = new Date();
             } else if (!choice.isValid) {
-                game.questions[game.rounds].error = true;
-                game.errors++;
+                gameSession.questions[gameSession.round].error = true;
+                gameSession.errors++;
                 return game;
             }
 
-            game.rounds++;
-            if (game.rounds == GAME_ROUNDS_COUNT) {
-                // game.score = await ScoreRepository.insert(
-                //     game.startDate!,
-                //     new Date(),
-                //     game.rounds,
-                //     game.errors
-                // );
-
-                setGameState("score");
+            gameSession.round++;
+            if (gameSession.round == GAME_ROUNDS_COUNT) {
+                gameSession.endDate = new Date();
+                game.state = "saving-score";
                 return game;
             }
 
@@ -64,22 +78,52 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
         });
     }, []);
 
-    const startGame = (topicTitle: TopicTitle) => {
-        const newGame = createNewGame(topicTitle, pick);
-        setCurrentGame(newGame);
-        setGameState("playing");
+    const backToMenu = () => {
+        setGame((prev) => {
+            const game = cloneGame(prev);
+            game.state = "menu";
+            game.currentSession = null;
+
+            return game;
+        });
     };
 
-    const backToMenu = () => {
-        setGameState("menu");
-        setCurrentGame(null);
-    };
+    useEffect(() => {
+        if (game.state != "saving-score") {
+            return;
+        }
+
+        const saveScore = async () => {
+            const gameSession = game.currentSession!;
+            const score = await ScoreRepository.insert(
+                gameSession.topic.title,
+                gameSession.startDate!,
+                gameSession.endDate!,
+                gameSession.questions.length,
+                gameSession.errors
+            );
+
+            setGame((prev) => {
+                if (prev.state != "saving-score" || !prev.currentSession) {
+                    return prev;
+                }
+
+                const game = cloneGame(prev);
+                const gameSession = game.currentSession!;
+                gameSession.score = score;
+                game.state = "score";
+                return game;
+            });
+        };
+
+        saveScore();
+    }, [game]);
 
     const context: IGameContext = {
-        gameState,
+        game,
         availableTopics: getTopics(),
         startGame,
-        game: currentGame,
+        pick,
         backToMenu,
     };
 
@@ -88,29 +132,29 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
     );
 };
 
-const createNewGame = (
-    topicTitle: TopicTitle,
-    pick: (choice: Answer) => void
-): Game => {
+const createNewGameSession = (topicTitle: TopicTitle): GameSession => {
     const topic = getTopicBy(topicTitle);
     const rounds = takeRandom(topic.pairs, GAME_ROUNDS_COUNT);
     const questions = buildQuestions(rounds, topic.categories);
 
     return {
         topic,
-        categories: topic.categories,
         startDate: null,
+        endDate: null,
         questions: questions,
-        rounds: 0,
+        round: 0,
         errors: 0,
-        pick,
         score: null,
     };
 };
 
 const cloneGame = (game: Game): Game => {
     const clone = { ...game };
-    clone.questions = [...game.questions];
+
+    if (clone.currentSession) {
+        clone.currentSession = { ...clone.currentSession };
+        clone.currentSession.questions = [...clone.currentSession.questions];
+    }
 
     return clone;
 };

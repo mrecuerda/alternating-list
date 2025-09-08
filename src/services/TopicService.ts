@@ -5,6 +5,7 @@ export type Data = Record<TopicTitle, Topic>;
 export type TopicTitle = keyof typeof jsonData;
 export type Topic = {
     id: string;
+    title: string;
     categories: [Category, Category];
     pairs: RawPair[];
 };
@@ -21,6 +22,7 @@ const parseJsonData = (): Data => {
         const jsonTopic = jsonData[topicTitle as TopicTitle];
         const topic: Topic = {
             id: crypto.randomUUID(),
+            title: topicTitle,
             categories: jsonTopic.categories as [string, string],
             pairs: jsonTopic.pairs.map((p) => {
                 return {

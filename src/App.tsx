@@ -5,16 +5,21 @@ import Round from "./components/Round";
 import NewScore from "./components/NewScore";
 
 const App = () => {
-    const { gameState } = useGame();
+    const { game } = useGame();
 
-    const isMenu = useMemo(() => gameState == "menu", [gameState]);
-    const isPlaying = useMemo(() => gameState == "playing", [gameState]);
-    const isScore = useMemo(() => gameState == "score", [gameState]);
+    const isMenu = useMemo(() => game.state == "menu", [game]);
+    const isPlaying = useMemo(() => game.state == "playing", [game]);
+    const isSavingScore = useMemo(
+        () => game.state == "saving-score",
+        [game.state]
+    );
+    const isScore = useMemo(() => game.state == "score", [game]);
 
     return (
         <div className="d-flex flex-column justify-content-center align-items-center vh-100 mx-2">
             {isMenu && <TopicList />}
             {isPlaying && <Round />}
+            {isSavingScore && <></>}
             {isScore && <NewScore />}
         </div>
     );
