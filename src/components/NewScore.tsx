@@ -10,6 +10,20 @@ const NewScore = () => {
         return game.currentSession?.score;
     }, [game]);
 
+    const [wordsLabel, errorsLabel] = useMemo(() => {
+        const score = game.currentSession?.score;
+        if (!score) {
+            return [null, null];
+        }
+
+        const rounds = score.rounds;
+        const errors = score.errors;
+        return [
+            rounds < 2 ? `${rounds} mot` : `${rounds} mots`,
+            errors < 2 ? `${errors} erreur` : `${errors} erreurs`,
+        ];
+    }, [game]);
+
     return (
         <>
             {score && (
@@ -19,9 +33,9 @@ const NewScore = () => {
                     </h1>
                     <Chrono durationInMs={score.durationInMs} />
                     <div className="d-flex">
-                        <span>{score.rounds} mots</span>
+                        <span>{wordsLabel}</span>
                         <span className="mx-2">-</span>
-                        <span>{score.errors} erreur(s)</span>
+                        <span>{errorsLabel}</span>
                     </div>
                 </>
             )}
