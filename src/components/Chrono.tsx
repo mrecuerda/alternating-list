@@ -1,12 +1,13 @@
 interface IChronoParams {
     durationInMs: number;
+    display?: "h1" | "h2" | "h3" | "h4" | "h5";
 }
 
-const Chrono = (params: IChronoParams) => {
+export const Chrono = (params: IChronoParams) => {
     return (
         <>
             <div>
-                <span className="h1">
+                <span className={params.display ?? "h1"}>
                     {format(params.durationInMs, "m")}:
                     {format(params.durationInMs, "s")}.
                 </span>
@@ -20,18 +21,20 @@ const Chrono = (params: IChronoParams) => {
 
 const format = (durationInMs: number, timePart: "m" | "s" | "ms"): string => {
     switch (timePart) {
-        case "m":
+        case "m": {
             const minutes = Math.floor(durationInMs / 60000);
             return String(minutes);
+        }
 
-        case "s":
+        case "s": {
+
             const seconds = Math.floor(durationInMs / 1000) % 60;
             return String(seconds).padStart(2, "0");
+        }
 
-        case "ms":
+        case "ms": {
             const milliseconds = durationInMs % 1000;
             return String(milliseconds).padStart(3, "0");
+        }
     }
 };
-
-export default Chrono;

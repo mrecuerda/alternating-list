@@ -1,9 +1,9 @@
 import { Button } from "react-bootstrap";
-import { useGame } from "../providers/GameProvider";
 import { useEffect, useMemo, useState } from "react";
 import type { Answer } from "../types/Choice";
+import { useGame } from "../providers/GameProvider.useContext";
 
-const Round = () => {
+export const Round = () => {
     const { game, pick } = useGame();
     const [shake, setShake] = useState(false);
 
@@ -55,9 +55,8 @@ const Round = () => {
             <>
                 <Button
                     key={currentPair[0].id}
-                    className={`btn-lg col-md-4 col-sm-8 col-12 my-3 py-5 py-md-4 ${
-                        !currentPair[0].isValid && shake ? "shake" : null
-                    }`}
+                    className={`btn-lg col-md-4 col-sm-8 col-12 my-3 py-5 py-md-4 ${!currentPair[0].isValid && shake ? "shake" : null
+                        }`}
                     onClick={() => click(currentPair[0])}
                     variant={currentPair[0].color}
                 >
@@ -65,9 +64,8 @@ const Round = () => {
                 </Button>
                 <Button
                     key={currentPair[1].id}
-                    className={`btn-lg col-md-4 col-sm-8 col-12 my-3 py-5 py-md-4 ${
-                        !currentPair[1].isValid && shake ? "shake" : null
-                    }`}
+                    className={`btn-lg col-md-4 col-sm-8 col-12 my-3 py-5 py-md-4 ${!currentPair[1].isValid && shake ? "shake" : null
+                        }`}
                     onClick={() => click(currentPair[1])}
                     variant={currentPair[1].color}
                 >
@@ -77,5 +75,3 @@ const Round = () => {
         )
     );
 };
-
-export default Round;

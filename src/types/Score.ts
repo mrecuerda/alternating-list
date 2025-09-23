@@ -1,6 +1,8 @@
+import type { TopicTitle } from "../services/TopicService";
+
 export type Score = {
     id: number;
-    topicTitle: string;
+    topicTitle: TopicTitle;
     date: Date;
     durationInMs: number;
     rounds: number;

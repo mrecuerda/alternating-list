@@ -1,16 +1,15 @@
+import type { TopicTitle } from "../services/TopicService";
 import type { Score } from "../types/Score";
 import { db } from "./Database";
 
 export class ScoreRepository {
     static readonly insert = async (
-        topicTitle: string,
+        topicTitle: TopicTitle,
         startDate: Date,
         endDate: Date,
         rounds: number,
         errors: number
     ): Promise<Score> => {
-        debugger;
-
         const score: Score = {
             id: undefined!,
             topicTitle,
@@ -32,5 +31,9 @@ export class ScoreRepository {
 
     static readonly get = (id: number): Promise<Score | undefined> => {
         return db.scores.get(id);
+    };
+
+    static readonly getAll = (): Promise<Score[]> => {
+        return db.scores.toArray();
     };
 }

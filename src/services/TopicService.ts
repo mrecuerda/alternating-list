@@ -5,7 +5,7 @@ export type Data = Record<TopicTitle, Topic>;
 export type TopicTitle = keyof typeof jsonData;
 export type Topic = {
     id: string;
-    title: string;
+    title: TopicTitle;
     categories: [Category, Category];
     pairs: RawPair[];
 };
@@ -16,8 +16,8 @@ export type RawPair = {
 };
 
 const parseJsonData = (): Data => {
-    const data: { [key: string]: Topic } = {};
-    const topicTitles = Object.keys(jsonData);
+    const data: { [key: string]: Topic; } = {};
+    const topicTitles = Object.keys(jsonData) as TopicTitle[];
     for (const topicTitle of topicTitles) {
         const jsonTopic = jsonData[topicTitle as TopicTitle];
         const topic: Topic = {

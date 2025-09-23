@@ -1,10 +1,10 @@
 import { Button } from "react-bootstrap";
-import Chrono from "./Chrono";
-import { useGame } from "../providers/GameProvider";
 import { useMemo } from "react";
+import { useGame } from "../providers/GameProvider.useContext";
+import { Chrono } from "./Chrono";
 
-const NewScore = () => {
-    const { game, backToMenu } = useGame();
+export const NewScore = () => {
+    const { game, goToScores, backToMenu } = useGame();
 
     const score = useMemo(() => {
         return game.currentSession?.score;
@@ -40,15 +40,22 @@ const NewScore = () => {
                 </>
             )}
 
-            <Button
-                variant="outline-secondary"
-                className="mt-5"
-                onClick={backToMenu}
-            >
-                Menu
-            </Button>
+            <div>
+
+                <Button
+                    variant="outline-secondary"
+                    className="mt-4 mx-2"
+                    onClick={backToMenu}
+                >
+                    Menu
+                </Button>
+                <Button
+                    variant="outline-secondary"
+                    className="mt-4 mx-2"
+                    onClick={goToScores}>
+                    Tous les scores
+                </Button>
+            </div>
         </>
     );
 };
-
-export default NewScore;

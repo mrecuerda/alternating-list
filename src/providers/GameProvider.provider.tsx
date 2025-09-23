@@ -1,7 +1,5 @@
 import {
-    createContext,
     useCallback,
-    useContext,
     useEffect,
     useState,
 } from "react";
@@ -20,20 +18,14 @@ import type { Question } from "../types/Question";
 import type { Category } from "../types/Category";
 import { ScoreRepository } from "../dataAccessLayer/ScoreRepository";
 import type { GameSession } from "../types/GameSession";
+import type { IGameContext } from "./GameProvider.context";
+import { GameContext } from "./GameProvider.useContext";
+import { useScore } from "./ScoreProvider.useContext";
 
 const GAME_ROUNDS_COUNT = 50;
 
-interface IGameContext {
-    game: Game;
-    availableTopics: TopicTitle[];
-    startGame: (topicTitle: TopicTitle) => void;
-    pick: (choice: Answer) => void;
-    backToMenu: () => void;
-}
-
-const GameContext = createContext<IGameContext>(null!);
-
-const GameProvider = ({ children }: { children: React.ReactNode }) => {
+export const GameProvider = ({ children }: { children: React.ReactNode; }) => {
+    const { update: updateScores } = useScore();
     const [game, setGame] = useState<Game>({
         state: "menu",
         currentSession: null,
@@ -44,6 +36,15 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
             const game = cloneGame(prev);
             game.state = "playing";
             game.currentSession = createNewGameSession(topicTitle);
+
+            return game;
+        });
+    };
+
+    const goToScores = () => {
+        setGame((prev) => {
+            const game = cloneGame(prev);
+            game.state = "scores";
 
             return game;
         });
@@ -103,6 +104,8 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
                 gameSession.errors
             );
 
+            await updateScores();
+
             setGame((prev) => {
                 if (prev.state != "saving-score" || !prev.currentSession) {
                     return prev;
@@ -111,18 +114,19 @@ const GameProvider = ({ children }: { children: React.ReactNode }) => {
                 const game = cloneGame(prev);
                 const gameSession = game.currentSession!;
                 gameSession.score = score;
-                game.state = "score";
+                game.state = "new-score";
                 return game;
             });
         };
 
         saveScore();
-    }, [game]);
+    }, [game, updateScores]);
 
     const context: IGameContext = {
         game,
         availableTopics: getTopics(),
         startGame,
+        goToScores,
         pick,
         backToMenu,
     };
@@ -205,14 +209,3 @@ const updateAnswersValidity = (
         question[1].isValid = question[1].category == expectedCategory;
     });
 };
-
-const useGame = () => {
-    const context = useContext(GameContext);
-    if (!context) {
-        throw new Error("useGame must be used within a GameProvider.");
-    }
-
-    return context;
-};
-
-export { GameProvider, useGame };

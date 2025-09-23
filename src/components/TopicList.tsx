@@ -1,10 +1,10 @@
 import { Button } from "react-bootstrap";
-import { useGame } from "../providers/GameProvider";
 import { pickColors } from "../services/ColorService";
 import { zip } from "../services/ArrayService";
+import { useGame } from "../providers/GameProvider.useContext";
 
-const TopicData = () => {
-    const { availableTopics, startGame } = useGame();
+export const TopicList = () => {
+    const { availableTopics, startGame, goToScores } = useGame();
     const colors = pickColors(availableTopics.length);
     const coloredTopics = zip(availableTopics, colors).map((x) => {
         return {
@@ -21,7 +21,7 @@ const TopicData = () => {
                 return (
                     <Button
                         key={topicTitle}
-                        className="btn-lg my-2 col-12 col-md-6"
+                        className="btn-lg my-2 col-10 col-md-8 col-lg-6 col-xl-5 col-xxl-4"
                         onClick={() => startGame(topicTitle)}
                         variant={color}
                     >
@@ -29,8 +29,7 @@ const TopicData = () => {
                     </Button>
                 );
             })}
+            <Button variant="outline-secondary" className="mt-4" onClick={goToScores}>Scores</Button>
         </>
     );
 };
-
-export default TopicData;
